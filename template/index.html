@@ -1,1 +1,482 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. - AI Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c0c, #1a1a2e);
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            width: 95%;
+            max-width: 400px;
+            height: 85vh;
+            background: rgba(25, 25, 35, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #444;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Header */
+        .chat-header {
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            border-bottom: 2px solid #00b4db;
+        }
+
+        .jarvis-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 10px rgba(0, 180, 219, 0.5);
+        }
+
+        .jarvis-subtitle {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 12px;
+            height: 12px;
+            background: #00ff00;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Chat Messages */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.4;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #0083b0, #00b4db);
+            border-bottom-right-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0, 131, 176, 0.3);
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.6;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .typing-indicator {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            border-radius: 18px;
+            border-bottom-left-radius: 5px;
+            display: none;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #00b4db;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+
+        /* Input Area */
+        .chat-input-container {
+            padding: 15px 20px;
+            background: rgba(20, 20, 30, 0.9);
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #00b4db;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .send-btn, .voice-btn {
+            width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 180, 219, 0.3);
+        }
+
+        .send-btn:hover, .voice-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 180, 219, 0.5);
+        }
+
+        .voice-btn.listening {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            animation: pulse 0.8s infinite;
+        }
+
+        /* Welcome Message */
+        .welcome-message {
+            text-align: center;
+            padding: 20px;
+            opacity: 0.8;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .chat-container {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+
+        /* Scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #00b4db;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="status-indicator"></div>
+            <div class="jarvis-title">J.A.R.V.I.S.</div>
+            <div class="jarvis-subtitle">Just A Rather Very Intelligent System</div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Welcome Message -->
+            <div class="welcome-message">
+                <p>Hello, I'm JARVIS. How can I assist you today?</p>
+                <div class="features-grid">
+                    <div class="feature">🔍 Web Search</div>
+                    <div class="feature">⏰ Time/Date</div>
+                    <div class="feature">🎤 Voice Commands</div>
+                    <div class="feature">🤖 AI Responses</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type your message or use voice...">
+            <button class="voice-btn" id="voiceBtn">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="send-btn" id="sendBtn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        // JARVIS Responses Database
+        const jarvisResponses = {
+            greetings: [
+                "Hello sir, how may I assist you today?",
+                "Good to see you sir, what can I do for you?",
+                "JARVIS online and ready sir!",
+                "At your service, sir!"
+            ],
+            time: [
+                "The current time is {{time}}",
+                "It's {{time}} sir",
+                "Time check: {{time}}"
+            ],
+            search: [
+                "According to my search: {{result}}",
+                "I found this information: {{result}}",
+                "Search results indicate: {{result}}"
+            ],
+            default: [
+                "I'm processing your request sir...",
+                "Let me analyze that for you...",
+                "Working on it sir...",
+                "One moment please..."
+            ]
+        };
+
+        // Initialize chat
+        function initChat() {
+            // Add welcome message after a delay
+            setTimeout(() => {
+                addMessage("Hello! I'm JARVIS, your AI assistant. You can ask me anything - try 'What time is it?' or 'Search for artificial intelligence'", 'bot');
+            }, 1000);
+        }
+
+        // Add message to chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            messageDiv.innerHTML = `
+                <div class="message-text">${text}</div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Show typing indicator
+        function showTyping() {
+            typingIndicator.style.display = 'block';
+            scrollToBottom();
+        }
+
+        // Hide typing indicator
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        // Scroll to bottom of chat
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Get JARVIS response
+        function getJarvisResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+            
+            // Greetings
+            if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
+                return getRandomResponse(jarvisResponses.greetings);
+            }
+            
+            // Time
+            if (message.includes('time')) {
+                const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                return getRandomResponse(jarvisResponses.time).replace('{{time}}', time);
+            }
+            
+            // Date
+            if (message.includes('date')) {
+                const date = new Date().toLocaleDateString();
+                return `Today's date is ${date} sir`;
+            }
+            
+            // Search (simulated)
+            if (message.includes('search') || message.includes('find') || message.includes('what is') || message.includes('who is')) {
+                return "I'll search that for you. This would connect to Google Search API in the full version.";
+            }
+            
+            // Default response
+            return getRandomResponse(jarvisResponses.default);
+        }
+
+        // Get random response from array
+        function getRandomResponse(responses) {
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+
+        // Send message
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message === '') return;
+            
+            // Add user message
+            addMessage(message, 'user');
+            chatInput.value = '';
+            
+            // Show typing indicator
+            showTyping();
+            
+            // Simulate JARVIS thinking
+            setTimeout(() => {
+                hideTyping();
+                const response = getJarvisResponse(message);
+                addMessage(response, 'bot');
+            }, 1500 + Math.random() * 1000);
+        }
+
+        // Voice recognition
+        function startVoiceRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                addMessage("Voice recognition not supported in this browser", 'bot');
+                return;
+            }
+            
+            const recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            
+            recognition.start();
+            voiceBtn.classList.add('listening');
+            
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                chatInput.value = transcript;
+                voiceBtn.classList.remove('listening');
+                sendMessage();
+            };
+            
+            recognition.onerror = function() {
+                voiceBtn.classList.remove('listening');
+            };
+            
+            recognition.onend = function() {
+                voiceBtn.classList.remove('listening');
+            };
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', sendMessage);
+        
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        voiceBtn.addEventListener('click', startVoiceRecognition);
+
+        // Initialize chat
+        initChat();
+    </script>
+</body>
+  </html>
